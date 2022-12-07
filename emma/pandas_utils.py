@@ -69,3 +69,43 @@ class InRangeOperator:
 
     def __repr__(self):
         return f'{self.column} in [{self.range[0]}, {self.range[1]})'
+
+
+def make_refinment(description_options: dict):
+  def refinment(description):
+    for _, options in description_options.items():
+      for option in options:
+        if description is None:
+          refined_description = [option]
+        else:
+          if option in description:
+            continue # just skip this option, as it is redundant
+          refined_description = description[:]
+          should_skip = False
+          for desc in description:
+            if desc.column != option.column:
+              continue
+            if isinstance(desc, EqualsOperator) and isinstance(option, EqualsOperator):
+               should_skip = True
+               break
+            elif isinstance(desc, EqualsOperator) and isinstance(option, InSetOperator):
+               should_skip = True
+               break
+            elif isinstance(desc, InSetOperator) and isinstance(option, EqualsOperator):
+              if option.value in desc.value:
+                refined_description.remove(desc)
+            elif isinstance(desc, InSetOperator) and isinstance(option, InSetOperator):
+                new_set = desc.value & option.value
+                if len(new_set) < 1:
+                  should_skip = True
+                  break
+                refined_description.remove(desc)
+                if len(new_set) == 1:
+                  option = EqualsOperator(option.column, new_set.pop())
+                else:
+                  option = InSetOperator(option.column, new_set)
+          if should_skip:
+            continue
+          refined_description.append(option)
+        yield sorted(refined_description, key=str) # we sort the refined_description here so that it will be easier to catch duplicates
+  return refinment
