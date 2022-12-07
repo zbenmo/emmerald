@@ -1,9 +1,13 @@
 from sklearn.datasets import fetch_openml
 from EMM import EMM
 import numpy as np
-from typing import Any, Protocol, FrozenSet, List, Tuple
-from dataclasses import dataclass
-from functools import reduce
+from pandas_utils import (
+  EqualsOperator,
+  NotEqualsOperator,
+  InSetOperator,
+  InRangeOperator,
+  description_to_indices
+)
 
 
 def titanic_example():
@@ -17,80 +21,22 @@ def titanic_example():
   X.drop(['boat', 'body', 'home.dest'], axis=1, inplace=True)
   y = y.astype(int)
   X.pclass = X.pclass.astype(int)
+  X.sibsp = X.sibsp.astype(int)
+  X.parch = X.parch.astype(int)
 
   # print(X.info())
-  # #   Column    Non-Null Count  Dtype
+  #  #   Column    Non-Null Count  Dtype
   # ---  ------    --------------  -----
-  # 0   pclass    1309 non-null   float64
-  # 1   name      1309 non-null   object
-  # 2   sex       1309 non-null   category
-  # 3   age       1046 non-null   float64
-  # 4   sibsp     1309 non-null   float64
-  # 5   parch     1309 non-null   float64
-  # 6   ticket    1309 non-null   object
-  # 7   fare      1308 non-null   float64
-  # 8   cabin     295 non-null    object
-  # 9   embarked  1307 non-null   category
-
-  class LogicalOperator(Protocol):
-    def __call__(self, df):
-      ...
-
-    def __repr__(self):
-      ...
-
-  def bitwise_and(iterable):
-      return reduce(np.bitwise_and, iterable, True)
-
-  def description_to_indices(description: List[LogicalOperator]):
-    return X.loc[lambda d: bitwise_and(f(d) for f in description)].index
-
-  @dataclass(frozen=True)
-  class EqualsOperator:
-    column: str
-    value: Any
-
-    def __call__(self, df):
-      return df[self.column] == self.value
-
-    def __repr__(self):
-      return f'{self.column}=={self.value}'
-
-  @dataclass(frozen=True)
-  class NotEqualsOperator:
-    column: str
-    value: Any
-
-    def __call__(self, df):
-      return df[self.column] != self.value
-
-    def __repr__(self):
-      return f'{self.column}!={self.value}'
-
-  @dataclass(frozen=True)
-  class InSetOperator:
-    column: str
-    value: FrozenSet[Any]
-
-    def __call__(self, df):
-      return df[self.column].isin(self.value)
-
-    def __repr__(self):
-      return f'{self.column} in {self.value}'
-
-  @dataclass(frozen=True)
-  class InRangeOperator:
-    """
-    Range includes lower bound, and does not include upper bound
-    """
-    column: str
-    range: Tuple[Any, Any]
-
-    def __call__(self, df):
-      return (df[self.column]>=self.range[0]) & (df[self.column]<self.range[1]) 
-
-    def __repr__(self):
-      return f'{self.column} in [{self.range[0]}, {self.range[1]})'
+  #  0   pclass    1309 non-null   int64
+  #  1   name      1309 non-null   object
+  #  2   sex       1309 non-null   category
+  #  3   age       1046 non-null   float64
+  #  4   sibsp     1309 non-null   int64
+  #  5   parch     1309 non-null   int64
+  #  6   ticket    1309 non-null   object
+  #  7   fare      1308 non-null   float64
+  #  8   cabin     295 non-null    object
+  #  9   embarked  1307 non-null   category
 
   age_brackets = [round(x) for x in np.linspace(0, X.age.max() + 1, 8)]
 
@@ -114,7 +60,7 @@ def titanic_example():
   }
 
   def quality(description):
-    indices = description_to_indices(description)
+    indices = description_to_indices(X, description)
     mean_survived = np.mean(y[indices])
     size_of_subgroup = len(indices)
     return (mean_survived, size_of_subgroup, -len(description))
@@ -157,7 +103,7 @@ def titanic_example():
         yield sorted(refined_description, key=str) # we sort the refined_description here so that it will be easier to catch duplicates
 
   def satisfies(description):
-    indices = description_to_indices(description)
+    indices = description_to_indices(X, description)
     return len(indices) > 10 # so at least 11 in the subgroup
 
   emm = EMM(
