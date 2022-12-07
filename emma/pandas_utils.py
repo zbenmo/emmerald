@@ -16,8 +16,8 @@ def bitwise_and(iterable):
     return reduce(np.bitwise_and, iterable, True)
 
 
-def description_to_indices(X, description: List[LogicalOperator]):
-    return X.loc[lambda d: bitwise_and(f(d) for f in description)].index
+def description_to_indices(df, description: List[LogicalOperator]):
+    return df.loc[lambda d: bitwise_and(f(d) for f in description)].index
 
 
 @dataclass(frozen=True)
