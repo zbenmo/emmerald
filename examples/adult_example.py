@@ -8,62 +8,62 @@ from emma.pandas_utils import (
   description_to_indices
 )
 import numpy as np
+import pandas as pd 
+from collections import defaultdict
+from sklearn.tree import DecisionTreeClassifier
+from sklearn.metrics import roc_auc_score
+from sklearn.preprocessing import LabelEncoder, LabelBinarizer
+from sklearn.pipeline import make_pipeline
+from sklearn.compose import make_column_transformer
 
 
-def titanic_example():
+def adult_example():
   """
-  This is a basic example in which we look for subgroups where the survival rate is high.
-  This is more a "subgroup discovery" task rather then full fledged EMM, as we don't build a model but just look at the target 'survived'.
-  Still this example provides most of the elements for almost every EMM model class. 
+  In this example we build for every subgroup a decision tree of max depth 3 and calculate the roc_auc_score (on the training set).
+  We then look for the groups that are hardest to nail (with decision tree of max depth 3).
   """
 
-  X, y = fetch_openml("titanic", version=1, as_frame=True, return_X_y=True)
-  X.drop(['boat', 'body', 'home.dest'], axis=1, inplace=True)
-  y = y.astype(int)
-  X.pclass = X.pclass.astype(int)
-  X.sibsp = X.sibsp.astype(int)
-  X.parch = X.parch.astype(int)
-
+  X, y = fetch_openml("adult", version=1, as_frame=True, return_X_y=True)
   # print(X.info())
-  #  #   Column    Non-Null Count  Dtype
-  # ---  ------    --------------  -----
-  #  0   pclass    1309 non-null   int64
-  #  1   name      1309 non-null   object
-  #  2   sex       1309 non-null   category
-  #  3   age       1046 non-null   float64
-  #  4   sibsp     1309 non-null   int64
-  #  5   parch     1309 non-null   int64
-  #  6   ticket    1309 non-null   object
-  #  7   fare      1308 non-null   float64
-  #  8   cabin     295 non-null    object
-  #  9   embarked  1307 non-null   category
+  #  #   Column          Non-Null Count  Dtype
+  # ---  ------          --------------  -----
+  #  0   age             48842 non-null  category
+  #  1   workclass       46043 non-null  category
+  #  2   fnlwgt          48842 non-null  float64
+  #  3   education       48842 non-null  category
+  #  4   education-num   48842 non-null  float64
+  #  5   marital-status  48842 non-null  category
+  #  6   occupation      46033 non-null  category
+  #  7   relationship    48842 non-null  category
+  #  8   race            48842 non-null  category
+  #  9   sex             48842 non-null  category
+  #  10  capitalgain     48842 non-null  category
+  #  11  capitalloss     48842 non-null  category
+  #  12  hoursperweek    48842 non-null  category
+  #  13  native-country  47985 non-null  category
 
-  age_brackets = [round(x) for x in np.linspace(0, X.age.max() + 1, 8)]
+  # print(y.unique())
+  # ['<=50K', '>50K']
 
-  description_options = {
-    'pclass': [
-      EqualsOperator('pclass', pclass) for pclass in X.pclass.unique()
-    ] + [
-      InSetOperator('pclass', pclassSet) for pclassSet in [{1, 2}, {2, 3}]
-    ],
-    'sex': [
-      EqualsOperator('sex', sex) for sex in X.sex.unique()
-    ],
-    'age': [
-      InRangeOperator('age', (range_low, range_high)) for range_low, range_high in zip(age_brackets[:-1], age_brackets[1:])
-    ],
-    'embarked': [
-      EqualsOperator('embarked', port) for port in X.embarked.unique()
-    ] + [
-      NotEqualsOperator('embarked', port) for port in X.embarked.unique()
-    ]
-  }
+  y = y.map({'<=50K': 0, '>50K': 1}).astype(int)
+
+  description_options = defaultdict(list)
+
+  for column in X.select_dtypes(include=['category']).columns:
+    description_options[column].extend(
+      EqualsOperator(column, val) for val in X[column].unique()
+    )
 
   def quality(description):
     indices = description_to_indices(X, description)
-    mean_survived = np.mean(y[indices])
+    features = pd.get_dummies(X.loc[indices])
+    targets = y.loc[indices]
+    dt = DecisionTreeClassifier(max_depth=3)
+    dt.fit(features, targets)
+    predictions = dt.predict_proba(features)
+    roc_auc = roc_auc_score(targets, predictions[:, 1])
     size_of_subgroup = len(indices)
-    return (mean_survived, size_of_subgroup, -len(description))
+    return (-roc_auc, size_of_subgroup, -len(description))
 
   def refinment(description):
     for _, options in description_options.items():
@@ -104,7 +104,8 @@ def titanic_example():
 
   def satisfies(description):
     indices = description_to_indices(X, description)
-    return len(indices) > 10 # so at least 11 in the subgroup
+    avg = np.mean(y.loc[indices])
+    return len(indices) > 100 and (0.1 < avg < 0.9) # so at least 101 in the subgroup and some variablity in the target
 
   emm = EMM(
       dataset=None,
@@ -120,4 +121,4 @@ def titanic_example():
 
 
 if __name__ == "__main__":
-    titanic_example()
+    adult_example()

@@ -104,9 +104,9 @@ class EMM:
       while not candidates_queue.empty():
         seed_description = candidates_queue.pop()
         for description in self.refinment_func(seed_description):
-          quality = self.quality_func(description)
           if not self.satisfies_all_func(description):
             continue
+          quality = self.quality_func(description)
           element = PriorityQueueElement(quality, description)
           results_set.push(element)
           beam.push(element)
