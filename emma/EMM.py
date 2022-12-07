@@ -63,6 +63,21 @@ class PriorityQueue:
     return len(self.heap) < 1
 
 
+class QualityFunc(Protocol):
+  def __call__(description: SubgroupDescription) -> Quality:
+    ...
+
+
+class RefinmentFunc(Protocol):
+  def __call__(description: SubgroupDescription) -> Generator[SubgroupDescription, None, None]:
+    ...
+
+
+class SatisfiesAllFunc(Protocol):
+  def __call__(description: SubgroupDescription) -> bool:
+    ...
+
+
 class EMM:
   """
   This Exceptional Model Mining is a generic algorithm to find interesting subgroups with some respect.
@@ -72,9 +87,9 @@ class EMM:
   def __init__(
       self,
       dataset: SubgroupDescription,
-      quality_func: Callable[[SubgroupDescription], Quality],
-      refinment_func: Callable[[SubgroupDescription], Generator[SubgroupDescription, None, None]],
-      satisfies_all_func: Callable[[SubgroupDescription], bool]
+      quality_func: QualityFunc,
+      refinment_func: RefinmentFunc,
+      satisfies_all_func: SatisfiesAllFunc
     ):
     """
     dataset is the description of the whole dataset (ex. None, "All", etc.)

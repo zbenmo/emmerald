@@ -1,7 +1,8 @@
 from dataclasses import dataclass
 from functools import reduce
 import numpy as np
-from typing import Any, Protocol, FrozenSet, List, Tuple
+from typing import Any, Protocol, FrozenSet, List, Tuple, Generator
+from .EMM import RefinmentFunc, SubgroupDescription
 
 
 class LogicalOperator(Protocol):
@@ -71,11 +72,16 @@ class InRangeOperator:
         return f'{self.column} in [{self.range[0]}, {self.range[1]})'
 
 
-def make_refinment(description_options: dict):
-  def refinment(description):
+def make_refinment(dataset: SubgroupDescription, description_options: dict) -> RefinmentFunc:
+  """
+  dataset is the representation of the whole dataset (ex. None, or 'ALL', etc.)
+  description_options is a dictionality from a column to a list of relevant LogicalOperators available for a refinment
+  """
+
+  def refinment(description: List[LogicalOperator]) -> Generator[SubgroupDescription, None, None]:
     for _, options in description_options.items():
       for option in options:
-        if description is None:
+        if description == dataset:
           refined_description = [option]
         else:
           if option in description:

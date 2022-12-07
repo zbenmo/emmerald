@@ -66,7 +66,7 @@ def titanic_example():
     size_of_subgroup = len(indices)
     return (mean_survived, size_of_subgroup, -len(description))
 
-  refinment = make_refinment(description_options)
+  refinment = make_refinment(None, description_options)
 
   def satisfies(description):
     indices = description_to_indices(X, description)
