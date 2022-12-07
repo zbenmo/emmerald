@@ -18,8 +18,6 @@ def titanic_example():
   y = y.astype(int)
   X.pclass = X.pclass.astype(int)
 
-  print(X.shape)
-
   # print(X.info())
   # #   Column    Non-Null Count  Dtype
   # ---  ------    --------------  -----
@@ -33,11 +31,6 @@ def titanic_example():
   # 7   fare      1308 non-null   float64
   # 8   cabin     295 non-null    object
   # 9   embarked  1307 non-null   category
-
-  print(X.pclass.unique())
-  print(X.sex.unique())
-  print(X.embarked.unique())
-  print(X.age.describe())
 
   class LogicalOperator(Protocol):
     def __call__(self, df):
@@ -129,17 +122,39 @@ def titanic_example():
   def refinment(description):
     for _, options in description_options.items():
       for option in options:
-        if description and (option in description):
-          continue
-        if (
-          description
-          and isinstance(option, InSetOperator)
-          and any(x.column == option.column for x in description if isinstance(x, EqualsOperator))
-        ):
-          continue
-        y = [] if description is None else description[:]
-        y.append(option)
-        yield sorted(y, key=str) # we sort the description here so that it will be easier to catch duplicates
+        if description is None:
+          refined_description = [option]
+        else:
+          if option in description:
+            continue # just skip this option, as it is redundant
+          refined_description = description[:]
+          should_skip = False
+          for desc in description:
+            if desc.column != option.column:
+              continue
+            if isinstance(desc, EqualsOperator) and isinstance(option, EqualsOperator):
+               should_skip = True
+               break
+            elif isinstance(desc, EqualsOperator) and isinstance(option, InSetOperator):
+               should_skip = True
+               break
+            elif isinstance(desc, InSetOperator) and isinstance(option, EqualsOperator):
+              if option.value in desc.value:
+                refined_description.remove(desc)
+            elif isinstance(desc, InSetOperator) and isinstance(option, InSetOperator):
+                new_set = desc.value & option.value
+                if len(new_set) < 1:
+                  should_skip = True
+                  break
+                refined_description.remove(desc)
+                if len(new_set) == 1:
+                  option = EqualsOperator(option.column, new_set.pop())
+                else:
+                  option = InSetOperator(option.column, new_set)
+          if should_skip:
+            continue
+          refined_description.append(option)
+        yield sorted(refined_description, key=str) # we sort the refined_description here so that it will be easier to catch duplicates
 
   def satisfies(description):
     indices = description_to_indices(description)
