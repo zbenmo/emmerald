@@ -1,10 +1,11 @@
 from typing import Callable, Protocol, Generator
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 import heapq
 
 
 class SubgroupDescription(Protocol):
-  ...
+  def __eq__(self, __o: object) -> bool:
+    ...
 
 
 class Quality(Protocol):
@@ -16,6 +17,11 @@ class SimpleQueue:
     self.queue = []
 
   def push(self, element: SubgroupDescription):
+    """
+    Adds to the tail of the queue yet only if not already in the queue.
+    """
+    if element in self.queue:
+      return
     self.queue.append(element)
 
   def pop(self) -> SubgroupDescription:
@@ -28,7 +34,7 @@ class SimpleQueue:
 @dataclass(order=True)
 class PriorityQueueElement:
   quality: Quality
-  description: SubgroupDescription
+  description: SubgroupDescription = field(compare=False)
 
 
 class PriorityQueue:
@@ -37,6 +43,11 @@ class PriorityQueue:
     self.heap = []
 
   def push(self, element: SubgroupDescription):
+    """
+    Adds to the heap, maintaining heap property, yet only if not already in the heap.
+    """
+    if element in self.heap:
+      return
     if len(self.heap) < self.max_items:
       heapq.heappush(self.heap, element)
     else:
@@ -102,4 +113,7 @@ class EMM:
       while not beam.empty():
         item_from_beam = beam.pop()
         candidates_queue.push(item_from_beam.description)
-    return results_set
+    results = []
+    while not results_set.empty():
+      results.append(results_set.pop())
+    return sorted(results, reverse=True)
