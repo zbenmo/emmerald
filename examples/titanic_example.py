@@ -1,6 +1,5 @@
 from sklearn.datasets import fetch_openml
 from emma import EMM
-import numpy as np
 from emma.pandas_utils import (
   EqualsOperator,
   NotEqualsOperator,
@@ -8,6 +7,7 @@ from emma.pandas_utils import (
   InRangeOperator,
   description_to_indices
 )
+import numpy as np
 
 
 def titanic_example():
@@ -106,7 +106,7 @@ def titanic_example():
     indices = description_to_indices(X, description)
     return len(indices) > 10 # so at least 11 in the subgroup
 
-  emm = EMM.EMM(
+  emm = EMM(
       dataset=None,
       quality_func=quality,
       refinment_func=refinment,
