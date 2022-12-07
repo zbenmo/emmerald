@@ -1,17 +1,24 @@
 from sklearn.datasets import fetch_openml
 from EMM import EMM
 import numpy as np
-from typing import Any, Protocol, FrozenSet, List
+from typing import Any, Protocol, FrozenSet, List, Tuple
 from dataclasses import dataclass
-# np.random.seed(42)
 from functools import reduce
 
 
 def titanic_example():
+  """
+  This is a basic example in which we look for subgroups where the survival rate is high.
+  This is more a "subgroup discovery" task rather then full fledged EMM, as we don't build a model but just look at the target 'survived'.
+  Still this example provides most of the elements for almost every EMM model class. 
+  """
+
   X, y = fetch_openml("titanic", version=1, as_frame=True, return_X_y=True)
   X.drop(['boat', 'body', 'home.dest'], axis=1, inplace=True)
   y = y.astype(int)
   X.pclass = X.pclass.astype(int)
+
+  print(X.shape)
 
   # print(X.info())
   # #   Column    Non-Null Count  Dtype
@@ -30,6 +37,7 @@ def titanic_example():
   print(X.pclass.unique())
   print(X.sex.unique())
   print(X.embarked.unique())
+  print(X.age.describe())
 
   class LogicalOperator(Protocol):
     def __call__(self, df):
@@ -77,6 +85,22 @@ def titanic_example():
     def __repr__(self):
       return f'{self.column} in {self.value}'
 
+  @dataclass(frozen=True)
+  class InRangeOperator:
+    """
+    Range includes lower bound, and does not include upper bound
+    """
+    column: str
+    range: Tuple[Any, Any]
+
+    def __call__(self, df):
+      return (df[self.column]>=self.range[0]) & (df[self.column]<self.range[1]) 
+
+    def __repr__(self):
+      return f'{self.column} in [{self.range[0]}, {self.range[1]})'
+
+  age_brackets = [round(x) for x in np.linspace(0, X.age.max() + 1, 8)]
+
   description_options = {
     'pclass': [
       EqualsOperator('pclass', pclass) for pclass in X.pclass.unique()
@@ -85,6 +109,9 @@ def titanic_example():
     ],
     'sex': [
       EqualsOperator('sex', sex) for sex in X.sex.unique()
+    ],
+    'age': [
+      InRangeOperator('age', (range_low, range_high)) for range_low, range_high in zip(age_brackets[:-1], age_brackets[1:])
     ],
     'embarked': [
       EqualsOperator('embarked', port) for port in X.embarked.unique() # TODO: check if for None it actually works
@@ -95,12 +122,20 @@ def titanic_example():
 
   def quality(description):
     indices = description_to_indices(description)
-    return (np.mean(y[indices]), sum(indices), -len(description))
+    mean_survived = np.mean(y[indices])
+    size_of_subgroup = len(indices)
+    return (mean_survived, size_of_subgroup, -len(description))
 
   def refinment(description):
     for _, options in description_options.items():
       for option in options:
         if description and (option in description):
+          continue
+        if (
+          description
+          and isinstance(option, InSetOperator)
+          and any(x.column == option.column for x in description if isinstance(x, EqualsOperator))
+        ):
           continue
         y = [] if description is None else description[:]
         y.append(option)
@@ -108,7 +143,7 @@ def titanic_example():
 
   def satisfies(description):
     indices = description_to_indices(description)
-    return sum(indices) > 10
+    return len(indices) > 10 # so at least 11 in the subgroup
 
   emm = EMM(
       dataset=None,
@@ -117,7 +152,7 @@ def titanic_example():
       satisfies_all_func=satisfies
       )
 
-  results = emm.most_exceptional()
+  results = emm.most_exceptional(top_q=15)
 
   for result in results:
     print(result)
