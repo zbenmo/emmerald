@@ -1,4 +1,4 @@
-# emma
+# emmnesia
 Exceptional Model Mining (EMM)
 
 Based on algorithm and method developed and published here:

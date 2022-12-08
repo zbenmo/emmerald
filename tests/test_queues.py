@@ -1,6 +1,6 @@
 import pytest
 
-from emma.utils import (
+from emmnesia.utils import (
     SimpleQueue,
     PriorityQueue,
     PriorityQueueElement

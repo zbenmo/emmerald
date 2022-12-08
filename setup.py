@@ -1,7 +1,7 @@
 import os
 from setuptools import setup, find_packages
 
-import emma
+import emmnesia
 
 
 def read(fname):
@@ -9,8 +9,8 @@ def read(fname):
 
 
 setup(
-    name='emma',
-    version=emma.__version__,
+    name='emmnesia',
+    version=emmnesia.__version__,
     description="Exceptional Model Mining (EMM)",
     author="Oren Zeev-Ben-Mordehai",
     author_email='zbenmo@gmail.com',
