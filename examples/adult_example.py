@@ -55,9 +55,14 @@ def adult_example():
       EqualsOperator(column, val) for val in X[column].unique()
     )
 
+  # If makes sense, we can preprocess the full dataset as to save per-subgroup work later.
+  # Make sure such an optimization, if indeed time gain, does not hinder what you are exploring (train/test split considerations etc.) 
+  dataset_features = pd.get_dummies(X)
+
   def quality(description):
     indices = description_to_indices(X, description)
-    features = pd.get_dummies(X.loc[indices])
+    # features = pd.get_dummies(X.loc[indices])
+    features = dataset_features.loc[indices]
     targets = y.loc[indices]
     dt = DecisionTreeClassifier(max_depth=3)
     dt.fit(features, targets)
