@@ -130,5 +130,5 @@ class EMM:
         candidates_queue.push(item_from_beam.description)
     results = []
     while not results_set.empty():
-      results.append(results_set.pop())
-    return sorted(results, reverse=True)
+      results.insert(0, results_set.pop())
+    return results
