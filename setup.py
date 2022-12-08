@@ -14,7 +14,7 @@ setup(
     description="Exceptional Model Mining (EMM)",
     author="Oren Zeev-Ben-Mordehai",
     author_email='zbenmo@gmail.com',
-    url="https://github.com/zbenmo/emma",
+    url="https://github.com/zbenmo/emmnesia",
     maintainer='zbenmo@gmail.com',
     packages=find_packages(),
     long_description=read("README.md"),
