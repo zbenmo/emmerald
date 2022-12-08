@@ -11,6 +11,14 @@ from emma.pandas_utils import (
 import numpy as np
 
 
+def counted(f):
+    def wrapped(*args, **kwargs):
+        wrapped.calls += 1
+        return f(*args, **kwargs)
+    wrapped.calls = 0
+    return wrapped
+
+
 def titanic_example():
   """
   This is a basic example in which we look for subgroups where the survival rate is high.
@@ -60,6 +68,7 @@ def titanic_example():
     ]
   }
 
+  @counted
   def quality(description):
     indices = description_to_indices(X, description)
     mean_survived = np.mean(y[indices])
@@ -67,7 +76,9 @@ def titanic_example():
     return (mean_survived, size_of_subgroup, -len(description))
 
   refinment = make_refinment(None, description_options)
+  refinment = counted(refinment)
 
+  @counted
   def satisfies(description):
     indices = description_to_indices(X, description)
     return len(indices) > 10 # so at least 11 in the subgroup
@@ -83,6 +94,11 @@ def titanic_example():
 
   for result in results:
     print(result)
+
+  print()
+  print(f'{quality.calls=}')
+  print(f'{refinment.calls=}')
+  print(f'{satisfies.calls=}')
 
 
 if __name__ == "__main__":

@@ -18,6 +18,14 @@ from sklearn.pipeline import make_pipeline
 from sklearn.compose import make_column_transformer
 
 
+def counted(f):
+    def wrapped(*args, **kwargs):
+        wrapped.calls += 1
+        return f(*args, **kwargs)
+    wrapped.calls = 0
+    return wrapped
+
+
 def adult_example():
   """
   In this example we build for every subgroup a decision tree of max depth 3 and calculate the roc_auc_score (on the training set).
@@ -59,6 +67,7 @@ def adult_example():
   # Make sure such an optimization, if indeed time gain, does not hinder what you are exploring (train/test split considerations etc.) 
   dataset_features = pd.get_dummies(X)
 
+  @counted
   def quality(description):
     indices = description_to_indices(X, description)
     # features = pd.get_dummies(X.loc[indices])
@@ -72,7 +81,9 @@ def adult_example():
     return (-roc_auc, size_of_subgroup, -len(description))
 
   refinment = make_refinment(None, description_options)
+  refinment = counted(refinment)
 
+  @counted
   def satisfies(description):
     indices = description_to_indices(X, description)
     avg = np.mean(y.loc[indices])
@@ -89,6 +100,11 @@ def adult_example():
 
   for result in results:
     print(result)
+
+  print()
+  print(f'{quality.calls=}')
+  print(f'{refinment.calls=}')
+  print(f'{satisfies.calls=}')
 
 
 if __name__ == "__main__":
