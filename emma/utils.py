@@ -5,6 +5,10 @@ from .definitions import *
 
 
 class SimpleQueue:
+  """
+  FIFO and not bounded, yet does not add an item that is already in the queue.
+  Not as efficient as can be, given that it scans the existing item on every push.
+  """
   def __init__(self):
     self.queue = []
 
@@ -30,6 +34,11 @@ class PriorityQueueElement:
 
 
 class PriorityQueue:
+  """
+  Maintains at most max_items. Smaller items leaves first.
+  Does not add an item that is already in the queue.
+  Not as efficient as can be, given that it scans the existing item on every push.
+  """
   def __init__(self, max_items: int):
     self.max_items = max_items
     self.heap = []

@@ -37,7 +37,7 @@ class EMM:
     quality_func is a callable that returns a quality given a description
     refinment_func is a callable that yields all possible refinments of a given seed description to an additional one level
     satisfies_all_func is a constraint that each resulting description must meet. It is also a way to bound the search.
-      It is assumed that once a description does not meet a constraint, neight does any refinment of that description.  
+      It is assumed that once a description does not meet a constraint, neither does any refinment of that description.  
     """
 
     self.dataset = dataset
