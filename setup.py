@@ -9,7 +9,7 @@ def read(fname):
 
 
 setup(
-    name='emmnerald',
+    name='emmerald',
     version=emmerald.__version__,
     description="Exceptional Model Mining (EMM)",
     author="Oren Zeev-Ben-Mordehai",
