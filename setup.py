@@ -1,7 +1,7 @@
 import os
 from setuptools import setup, find_packages
 
-import emmnesia
+import emmerald
 
 
 def read(fname):
@@ -9,12 +9,12 @@ def read(fname):
 
 
 setup(
-    name='emmnesia',
-    version=emmnesia.__version__,
+    name='emmnerald',
+    version=emmerald.__version__,
     description="Exceptional Model Mining (EMM)",
     author="Oren Zeev-Ben-Mordehai",
     author_email='zbenmo@gmail.com',
-    url="https://github.com/zbenmo/emmnesia",
+    url="https://github.com/zbenmo/emmerald",
     maintainer='zbenmo@gmail.com',
     packages=find_packages(),
     long_description=read("README.md"),

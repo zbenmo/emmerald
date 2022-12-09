@@ -1,6 +1,6 @@
 import pytest
 
-from emmnesia.utils import (
+from emmerald.utils import (
     SimpleQueue,
     PriorityQueue,
     PriorityQueueElement

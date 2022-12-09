@@ -1,6 +1,6 @@
 from sklearn.datasets import fetch_openml
-from emmnesia import EMM
-from emmnesia.pandas_utils import (
+from emmerald import EMM
+from emmerald.pandas_utils import (
   EqualsOperator,
   NotEqualsOperator,
   InSetOperator,
